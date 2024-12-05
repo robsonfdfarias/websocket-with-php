@@ -1,0 +1,16 @@
+{
+    "name": "usuario/websocket-robson",
+    "autoload": {
+        "psr-4": {
+            "Usuario\\WebsocketRobson\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Robson Farias"
+        }
+    ],
+    "require": {
+        "cboden/ratchet": "^0.4.4"
+    }
+}

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <input type="text" name="name" id="name">
+    <select name="sala" id="sala">
+        <option value="sala01">sala 01</option>
+        <option value="sala02">sala 02</option>
+        <option value="sala03">sala 03</option>
+        <option value="sala04">sala 04</option>
+    </select>
+    <button onclick="logar()">Entrar</button>
+    <script>
+        function logar(){
+            let name = document.getElementById('name');
+            if(name.value != ''){
+                let n = name.value;
+                n = n.replace(' ', '_');
+                let sala = document.getElementById('sala');
+                window.open('websocket.html?name='+n+'&sala='+sala.value);
+            }
+        }
+    </script>
+</body>
+</html>

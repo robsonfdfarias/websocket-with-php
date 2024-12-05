@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket PHP - Salas</title>
+</head>
+<style>
+    .names{
+        width: fit-content;
+        padding: 10px 15px;
+        background-color: aquamarine;
+        border: 1px solid #cdcdcd;
+        border-radius: 4px;
+        display: inline-block;
+        margin: 2px;
+    }
+</style>
+<body>
+    <h1>WebSocket Cliente - Salas</h1>
+    <div>Pessoas na sala: <div id="peopleAr"></div></div>
+    <div id="messages"></div>
+    
+    <input type="text" id="messageInput" placeholder="Digite uma mensagem">
+    <button onclick="sendMessage()">Enviar</button>
+    <script src="./conn.js"></script>
+    <script>
+        var socket;
+        let url = location.href;
+        url = url.split('?');
+        if(url[1]){
+            let variaveis = url[1].split('&');
+            var nam = variaveis[0].split("=");
+            var sala = variaveis[1].split('=');
+            if(nam[0]=='name' && sala[0]=='sala'){
+                nam = decodeURIComponent(nam[1]);
+                socket = new Conn(sala[1], nam.replace("_", " "));
+                socket.runSocket();
+            }
+        }
+
+        async function sendMessage(){
+            if(socket!=undefined && socket!=null){
+                socket.sendMessage(sala[1]);
+                await fetchM();
+            }else{
+                alert('Você não está em nenhuma sala, favor voltar para o login')
+            }
+        }
+        async function fetchM(){
+            let url = getURL();
+            url = url.replace("websocket.html", "");
+            url+='endpoint.php';
+            var m = document.getElementById('messageInput').value;
+            document.getElementById('messageInput').value='';
+            // await fetch('http://localhost/websocket-robson/endpoint.php', {
+            await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sala: sala[1],
+                    nome: nam.replace("_", " "),
+                    mensagem: m
+                })
+            })
+            .then(response=>response.json())
+            .then(json=>{
+                // console.log(json);
+            });
+        }
+        function getURL(){
+            const url = new URL(window.location.href); // Obtém a URL atual
+            // A URL sem os parâmetros de consulta (query string)
+            const urlSemVariaveis = url.origin + url.pathname;
+            return urlSemVariaveis;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket PHP - Salas</title>
+</head>
+<body>
+    <h1>WebSocket Cliente - Salas</h1>
+    <div id="messages"></div>
+    
+    <input type="text" id="messageInput" placeholder="Digite uma mensagem">
+    <button onclick="sendMessage()">Enviar</button>
+    <script src="./conn.js"></script>
+    <script>
+        var socket;
+        let url = location.href;
+        url = url.split('?');
+        if(url[1]){
+            let variaveis = url[1].split('&');
+            var nam = variaveis[0].split("=");
+            var sala = variaveis[1].split('=');
+            if(nam[0]=='name' && sala[0]=='sala'){
+                nam = decodeURIComponent(nam[1]);
+                socket = new Conn(sala[1], nam);
+                socket.runSocket();
+            }
+        }
+
+        async function sendMessage(){
+            if(socket!=undefined && socket!=null){
+                socket.sendMessage(sala[1], nam);
+                await fetchM();
+            }else{
+                alert('Você não está em nenhuma sala, favor voltar para o login')
+            }
+        }
+        async function fetchM(){
+            let url = location.href;
+            url = url.split('/')[2];
+            url+='/endpoint.php';
+            console.log(url);
+            var m = document.getElementById('messageInput').value;
+            document.getElementById('messageInput').value='';
+            await fetch('http://localhost/websocket-robson/endpoint.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sala: sala[1],
+                    nome: nam,
+                    mensagem: m
+                })
+            })
+            .then(response=>response.json())
+            .then(json=>{
+                console.log(json);
+            });
+        }
+    </script>
+</body>
+</html>

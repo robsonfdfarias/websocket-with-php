@@ -1,0 +1,30 @@
+sala01|Olá|Robson_Farias
+sala01|All of these dependency managers support lockfiles, ensuring that everyone on your team is using the same version of the language. You can then run the TypeScript compiler using one of the following commands:|Robson_Farias
+sala01|Olá|Camila_Farias
+sala01|Blz|Camila_Farias
+sala01|Olá|Camila_Farias
+sala01|Olá|Camila_Farias
+sala01|Olá|Robson_Farias
+sala01|Olá|Robson_Farias
+sala01|Olá|Robson_Farias
+sala01|Olá bb|Camila_Farias
+sala01|Olá|Robson_Farias
+sala01|Olá|Robson_Farias
+sala01|Olá|Robson_Farias
+sala01|Olá|Robson_Farias
+sala01|Olá|Robson_Farias
+sala01|Olá|Robson_Farias
+sala01|Olá|Robson_Farias
+sala01|Olá|Robson_Farias
+sala01|Olá|Robson_Farias
+sala01|Olá bb|Camila_Farias
+sala01|Olá|Robson_Farias
+sala01|Olá|Tony_Farias
+sala01|Olá|Camila_Farias
+sala01|Como vocês estão?|Robson_Farias
+sala01|Olá|Robson Farias
+sala01|Olá|Tony Farias
+sala01|Olá|Camila Farias
+sala01|Tudo bem com vocês?|Robson Farias
+sala01|Olá|Robson Farias
+sala01|favage ga ga d aga g a|Robson Farias
