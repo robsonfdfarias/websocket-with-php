@@ -9,11 +9,36 @@
     .names{
         width: fit-content;
         padding: 10px 15px;
-        background-color: aquamarine;
         border: 1px solid #cdcdcd;
+        background-color: rgb(168, 231, 209);
         border-radius: 4px;
         display: inline-block;
         margin: 2px;
+    }
+    .geral{
+        width: 200px;
+        border: 1px solid #cdcdcd;
+        background-color: white;
+        margin: 0 2px;
+    }
+    .title{
+        padding: 5px 10px;
+        background-color: #cdcdcd;
+        width: calc(100% - 20px);
+    }
+    .content{
+        padding: 0;
+        width: 100%;
+        margin: 0;
+    }
+    .text{
+        padding: 5px;
+        width: calc(100% - 10px);
+        height: 300px;
+    }
+    .send{
+        display: flex;
+        background-color: #cdcdcd;
     }
 </style>
 <body>
@@ -23,7 +48,9 @@
     
     <input type="text" id="messageInput" placeholder="Digite uma mensagem">
     <button onclick="sendMessage()">Enviar</button>
+    <div id="conversations" style="position:absolute; bottom:0; left:0; width:100%;"></div>
     <script src="./conn.js"></script>
+    <script src="./urladmin.js"></script>
     <script>
         var socket;
         let url = location.href;
@@ -75,6 +102,54 @@
             // A URL sem os parâmetros de consulta (query string)
             const urlSemVariaveis = url.origin + url.pathname;
             return urlSemVariaveis;
+        }
+        function newChatUser(id, nome){
+            if(localStorage.getItem('to')){
+                let ar = [];
+                for(let i=0;i<localStorage.getItem('to').length;i++){
+                    ar.push(localStorage.getItem('to')[i]);
+                }
+            }
+            if(document.getElementById('geral_'+id)){
+                // document.getElementById('text_'+id).innerHTML+='<p>'+message+'</p>';
+            }else{
+                let divGeneral = document.createElement('div');
+                divGeneral.setAttribute('id', 'geral_'+id);
+                divGeneral.setAttribute('class', 'geral');
+                let divTitle = document.createElement('div');
+                divTitle.setAttribute('id', 'title_'+id);
+                divTitle.setAttribute('class', 'title');
+                divTitle.innerHTML = '<strong>'+nome+'</strong>';
+                let divContent = document.createElement('div');
+                divContent.setAttribute('id', 'content_'+id);
+                divContent.setAttribute('class', 'content');
+                let divText = document.createElement('div');
+                divText.setAttribute('id', 'text_'+id);
+                divText.setAttribute('class', 'text');
+                //insere a mensagem na divText
+                // divText.innerHTML+='<p>'+message+'</p>';
+                let divSend = document.createElement('div');
+                divSend.setAttribute('id', 'send_'+id);
+                divSend.setAttribute('class', 'send');
+                let inputMsg = document.createElement('textArea');
+                inputMsg.setAttribute('style', 'width:calc(100% - 30px); min-height:30px;');
+                inputMsg.setAttribute('placeholder', 'Digite a mensagem...');
+                let btSend = document.createElement('button');
+                btSend.setAttribute('onclik', 'sendMessageUser(this)');
+                btSend.setAttribute('class', 'btsend');
+                btSend.innerHTML='>';
+                //insere o textarea e o btSend na divSend
+                divSend.append(inputMsg);
+                divSend.append(btSend);
+                //insere a divText e a divSend na divContent
+                divContent.append(divText);
+                divContent.append(divSend);
+                //insere a divTitle e a divContent na divGeneral
+                divGeneral.append(divTitle);
+                divGeneral.append(divContent);
+                //insere a divGeneral na div conversations
+                document.getElementById('conversations').append(divGeneral);
+            }
         }
     </script>
 </body>
