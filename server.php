@@ -80,15 +80,14 @@ class WebSocketServer implements MessageComponentInterface {
             if ($ar["from"] !== $ar["client"]) {
                 //checa se a mensagem tem um destionatário específico ou é para todos da sala
                 if($ar['to']!=null){
-                    // echo '<pre>'.print_r($ar["client"], true).'</pre>';
-                    // echo 'ID do usuário: '.$ar['client']->resourceId;
                     if($ar['to']==$ar['client']->resourceId){
                         $ar["client"]->send(json_encode(array(
                             "message"=>"<b>{$ar["nome"]}</b>: {$ar['message']}", 
                             "peoplo"=>$this->getUsersByIdRoom($ar["roomId"]), 
                             "fromId"=>$ar['from']->resourceId, 
                             "fromName"=>$ar['nome'],
-                            "roomId"=>$ar["roomId"]
+                            "roomId"=>$ar["roomId"],
+                            "myId"=>null
                         )));
                         return;
                     }
@@ -103,7 +102,13 @@ class WebSocketServer implements MessageComponentInterface {
             }
             return null;
         }, $this->clientsByRoom);
-        $mens = array("message"=>"<b>{$nome}</b>: {$message}", "to"=>null, "peoplo"=>$this->getUsersByIdRoom($roomId), "roomId"=>$roomId);
+        $mens = array(
+            "message"=>"<b>{$nome}</b>: {$message}",
+            "to"=>null,
+            "peoplo"=>$this->getUsersByIdRoom($roomId),
+            "roomId"=>$roomId,
+            "myId"=>$from->resourceId
+        );
         if($to!=null){
             $mens['to'] = $to;
             $nomeDest = $this->getNameTo($to, $roomId);
@@ -113,19 +118,17 @@ class WebSocketServer implements MessageComponentInterface {
             }
         }
 
-        // Enviar para o próprio cliente também, caso queira
+        // Testa se a mensagem é diferente da abertura de conexão ('//;;!!@@##')
         if(strpos($message, '//;;!!@@##') === false){
+            // Enviar para o próprio cliente também, caso queira
             $from->send(json_encode($mens));
         }
     }
 
     public function getNameTo($id, $sala){
         return $this->sendMessageForUsers(array("roomId"=>$sala, "id"=>$id), function ($ar){
-            // echo $ar['id'].'\n<br>';
-            // echo '<pre>'.print_r($ar['client']['nome'], true).'</pre>';
             if(($ar['id']==$ar['client']['id'])==1){
             print_r('Valor: '.($ar['id']==$ar['client']['id']));
-                // $to = $this->clientsByRoom[$ar['id']];
                 return $ar['client']['nome'];
             }
         }, $this->users);

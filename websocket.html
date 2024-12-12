@@ -6,6 +6,16 @@
     <title>WebSocket PHP - Salas</title>
 </head>
 <style>
+    #conversations{
+        position:absolute; 
+        bottom:0; 
+        left:0; 
+        width:100%;
+        display: ruby;
+        justify-content: end;
+        align-items: end;
+        overflow-y: scroll;
+    }
     .names{
         width: fit-content;
         padding: 10px 15px;
@@ -20,11 +30,62 @@
         border: 1px solid #cdcdcd;
         background-color: white;
         margin: 0 2px;
+        overflow: hidden;
+        position: relative;
     }
     .title{
         padding: 5px 10px;
         background-color: #cdcdcd;
         width: calc(100% - 20px);
+        cursor: pointer;
+        position: relative;
+        transition: all ease-in 0.3s;
+    }
+    .title:hover{
+        background-color: #91ab80;
+        transition: all ease-in 0.3s;
+    }
+    .btCloseWindow{
+        padding:5px 10px;
+        background-color:rgb(255, 158, 158);
+        position:absolute;
+        right:0;
+        top:0;
+        color: rgb(0, 0, 0);
+        transition: all ease-in 0.3s;
+    }
+    .btCloseWindow:hover{
+        background-color:rgb(255, 11, 11);
+        color: rgb(255, 255, 255);
+        transition: all ease-in 0.3s;
+    }
+
+    .btCloseDivEmotions{
+        padding:5px 10px;
+        background-color:rgb(255, 158, 158);
+        position:absolute;
+        right:0;
+        top:0;
+        color: rgb(0, 0, 0);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all ease-in 0.3s;
+    }
+    .btCloseDivEmotions:hover{
+        background-color:rgb(255, 11, 11);
+        color: rgb(255, 255, 255);
+        transition: all ease-in 0.3s;
+    }
+    .divEmotions{
+        position: absolute;
+        top: 30px;
+        left: 0;
+        padding: 5px;
+        border: 1px solid #cdcdcd;
+        width: calc(100% - 10px);
+        height: calc(100% - 100px);
+        background-color: #91ab80;
+        display: none;
     }
     .content{
         padding: 0;
@@ -36,9 +97,23 @@
         width: calc(100% - 10px);
         height: 300px;
     }
+    .text img {
+        margin-bottom: -5px;
+    }
     .send{
         display: flex;
         background-color: #cdcdcd;
+    }
+    .divMsg{
+        width:calc(100% - 30px); 
+        height:30px;
+        background-color:white;
+        border:1px solid #cdcdcd;
+        overflow:auto;
+    }
+    .divMsg img{
+        height: 20px;
+        margin-bottom: -5px;
     }
 </style>
 <body>
@@ -48,13 +123,23 @@
     
     <input type="text" id="messageInput" placeholder="Digite uma mensagem">
     <button onclick="sendMessage()">Enviar</button>
-    <div id="conversations" style="position:absolute; bottom:0; left:0; width:100%;"></div>
+    <div id="conversations"></div>
+    <div id="som">
+        <audio id="audio" src="som.mp3"></audio>
+    </div>
+    <div id="galeria"></div> <!-- Onde as imagens serão exibidas -->
+
+    <script src="./emotions.js"></script>
+    <script src="./chatWindow.js"></script>
     <script src="./conn.js"></script>
     <script src="./urladmin.js"></script>
     <script>
         var socket;
         let url = location.href;
         url = url.split('?');
+        var chatWindow = new ChatWindow();
+        var adminGetUrl = new AdminGetUrlRff();
+        var emotions = new Emotions();
         if(url[1]){
             let variaveis = url[1].split('&');
             var nam = variaveis[0].split("=");
@@ -68,18 +153,20 @@
 
         async function sendMessage(){
             if(socket!=undefined && socket!=null){
-                socket.sendMessage(sala[1]);
-                await fetchM();
+                let message = document.getElementById('messageInput').value;
+                socket.sendMessage(sala[1], message, null);
+                await fetchM(message);
+                document.getElementById('messageInput').value='';
             }else{
                 alert('Você não está em nenhuma sala, favor voltar para o login')
             }
         }
-        async function fetchM(){
+        async function fetchM(message){
             let url = getURL();
             url = url.replace("websocket.html", "");
             url+='endpoint.php';
-            var m = document.getElementById('messageInput').value;
-            document.getElementById('messageInput').value='';
+            // var m = document.getElementById('messageInput').value;
+            // document.getElementById('messageInput').value='';
             // await fetch('http://localhost/websocket-robson/endpoint.php', {
             await fetch(url, {
                 method: 'POST',
@@ -89,7 +176,7 @@
                 body: JSON.stringify({
                     sala: sala[1],
                     nome: nam.replace("_", " "),
-                    mensagem: m
+                    mensagem: message
                 })
             })
             .then(response=>response.json())
@@ -104,52 +191,87 @@
             return urlSemVariaveis;
         }
         function newChatUser(id, nome){
-            if(localStorage.getItem('to')){
-                let ar = [];
-                for(let i=0;i<localStorage.getItem('to').length;i++){
-                    ar.push(localStorage.getItem('to')[i]);
-                }
+            let n = adminGetUrl.getUrlParameterValue('name');
+            n = n.replace('_', ' ');
+            if(n==nome){
+                return;
             }
-            if(document.getElementById('geral_'+id)){
-                // document.getElementById('text_'+id).innerHTML+='<p>'+message+'</p>';
+            chatWindow.newChatUser(id, nome);
+        }
+        function maxMinizar(obj){
+            let father = obj.parentNode;
+            if(father.style.height!='30px'){
+                father.setAttribute('style', 'height:30px;');
             }else{
-                let divGeneral = document.createElement('div');
-                divGeneral.setAttribute('id', 'geral_'+id);
-                divGeneral.setAttribute('class', 'geral');
-                let divTitle = document.createElement('div');
-                divTitle.setAttribute('id', 'title_'+id);
-                divTitle.setAttribute('class', 'title');
-                divTitle.innerHTML = '<strong>'+nome+'</strong>';
-                let divContent = document.createElement('div');
-                divContent.setAttribute('id', 'content_'+id);
-                divContent.setAttribute('class', 'content');
-                let divText = document.createElement('div');
-                divText.setAttribute('id', 'text_'+id);
-                divText.setAttribute('class', 'text');
-                //insere a mensagem na divText
-                // divText.innerHTML+='<p>'+message+'</p>';
-                let divSend = document.createElement('div');
-                divSend.setAttribute('id', 'send_'+id);
-                divSend.setAttribute('class', 'send');
-                let inputMsg = document.createElement('textArea');
-                inputMsg.setAttribute('style', 'width:calc(100% - 30px); min-height:30px;');
-                inputMsg.setAttribute('placeholder', 'Digite a mensagem...');
-                let btSend = document.createElement('button');
-                btSend.setAttribute('onclik', 'sendMessageUser(this)');
-                btSend.setAttribute('class', 'btsend');
-                btSend.innerHTML='>';
-                //insere o textarea e o btSend na divSend
-                divSend.append(inputMsg);
-                divSend.append(btSend);
-                //insere a divText e a divSend na divContent
-                divContent.append(divText);
-                divContent.append(divSend);
-                //insere a divTitle e a divContent na divGeneral
-                divGeneral.append(divTitle);
-                divGeneral.append(divContent);
-                //insere a divGeneral na div conversations
-                document.getElementById('conversations').append(divGeneral);
+                father.setAttribute('style', 'height:380px;');
             }
+        }
+        async function sendMessageTo(obj){
+            let text = obj.parentNode.children[0];
+            let idTo = getIdUserTo(obj.parentNode);
+            if(socket!=undefined && socket!=null){
+                socket.sendMessage(sala[1], text.innerHTML, idTo);
+                // await fetchM(message);
+                obj.parentNode.children[0].innerHTML='';
+            }else{
+                alert('Você não está em nenhuma sala, favor voltar para o login')
+            }
+        }
+        function getIdUserTo(obj){
+            let id = obj.getAttribute('id');
+            let idTo = id.split('_');
+            return idTo[1];
+        }
+        function closeWindow(obj){
+            let window = obj.parentNode.parentNode;
+            window.remove();
+        }
+        function confirmNotification(obj){
+            let title = obj.children[0];
+            title.removeAttribute('style');
+        }
+        function insertEmotion(obj){
+            let o = obj.parentNode
+            let id = getIdUserTo(o);
+            let test = verifyIfIsIntoDivRight('fieldText_'+id);
+            if(test==false){
+                o.style.display='none';
+                return;
+            }
+            let fieldText = document.getElementById('fieldText_'+id);
+            let selection = window.getSelection();
+            let range = selection.getRangeAt(0);
+            let texto = selection.toString();
+            //
+            // range.deleteContents();
+            range.insertNode(obj.cloneNode(true));
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+
+
+        function verifyIfIsIntoDivRight(div){
+            let container = window.getSelection().getRangeAt(0).startContainer;
+            let v = verify(container, []);
+            function verify(data, char){
+                let val = data;
+                if(val != null){
+                    if(val.nodeName=='DIV'){
+                        if(val.getAttribute('id') == div){
+                            return true;
+                        }
+                        if(val===window.body){
+                            return false;
+                        }
+                    }
+                }
+                val = data.parentNode;
+                return verify(val, char);
+            }
+            return v;
+        }
+        function closeDivEmotions(obj){
+            obj.parentNode.style.display='none';
         }
     </script>
 </body>

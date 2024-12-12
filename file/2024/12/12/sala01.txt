@@ -1,0 +1,2 @@
+sala01|Olá|Robson Farias
+sala01|Olá povo|Robson Farias

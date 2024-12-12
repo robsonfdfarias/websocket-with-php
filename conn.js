@@ -5,12 +5,12 @@ class Conn{
         this.nome = nome;
         this.status = true;
         this.urlAdmin = new AdminGetUrlRff();
+        this.chatWindow = new ChatWindow();
     }
     runSocket(){
         // Definindo as variáveis usuario e token
         const usuario = this.nome;
         const salaClient = this.sala;
-        // console.log(salaClient)
         let people = document.getElementById('peopleAr');
         this.conn = new WebSocket(`ws://localhost:8080?usuario=${usuario}&sala=${salaClient}`);
         this.conn.onopen = function(e) {
@@ -33,7 +33,11 @@ class Conn{
             if(json.fromId || json.to){
                 let idDest = json.fromId?json.fromId:json.to;
                 let nameDest = json.fromName?json.fromName:json.toName;
-                this.newChatUser(idDest, nameDest, json.message);
+                // this.newChatUser(idDest, nameDest, json.message);
+                this.chatWindow.newChatUser(idDest, nameDest, json.message);
+                if(json.myId===null){
+                    this.animateTitle(idDest, json.message);
+                }
             }else{
                 var messages = document.getElementById("messages");
                 // messages.innerHTML += "<p>" + e.data + "</p>";
@@ -51,77 +55,53 @@ class Conn{
             to: null
         }
         if(this.status){
-            // this.conn.send(sala + '| //;;!!@@## |' + nome);
             this.conn.send(JSON.stringify(json));
             this.status = false;
         }
-        // this.conn.send(sala + '|' + message + '|' + nome);
     }
-    sendMessage(roomId) {
-        var message = document.getElementById("messageInput");
+    sendMessage(roomId, message, to) {
         let json = {
             roomId: roomId,
-            message: message.value,
+            message: message,
             nome: this.nome,
-            to: null
+            to: to
         }
-        if(this.urlAdmin.verifyVarUrl('to')){
-            // json.to = this.urlAdmin.getUrlParameterValue('to');
-            json.to = localStorage.getItem('to');
-            console.log(json.to);
-        }
-        console.log('------------------------------------')
-        console.log(this.urlAdmin.getUrlParameterValue('to'))
-        console.log('------------------------------------')
 
         if(this.conn!=null && this.conn != undefined){
             // Enviar a mensagem com o ID da sala
-            // this.conn.send(roomId + '|' + message + '|' + nam);
             this.conn.send(JSON.stringify(json));
         }
-        
-        // messageInput.value = ''; // Limpar o campo de mensagem
     }
-    newChatUser(id, nome, message){
-        if(document.getElementById('geral_'+id)){
-            document.getElementById('text_'+id).innerHTML+='<p>'+message+'</p>';
-        }else{
-            let divGeneral = document.createElement('div');
-            divGeneral.setAttribute('id', 'geral_'+id);
-            divGeneral.setAttribute('class', 'geral');
-            let divTitle = document.createElement('div');
-            divTitle.setAttribute('id', 'title_'+id);
-            divTitle.setAttribute('class', 'title');
-            divTitle.innerHTML = '<strong>'+nome+'</strong>';
-            let divContent = document.createElement('div');
-            divContent.setAttribute('id', 'content_'+id);
-            divContent.setAttribute('class', 'content');
-            let divText = document.createElement('div');
-            divText.setAttribute('id', 'text_'+id);
-            divText.setAttribute('class', 'text');
-            //insere a mensagem na divText
-            divText.innerHTML+='<p>'+message+'</p>';
-            let divSend = document.createElement('div');
-            divSend.setAttribute('id', 'send_'+id);
-            divSend.setAttribute('class', 'send');
-            let inputMsg = document.createElement('textArea');
-            inputMsg.setAttribute('style', 'width:calc(100% - 30px); min-height:30px;');
-            inputMsg.setAttribute('placeholder', 'Digite a mensagem...');
-            let btSend = document.createElement('button');
-            btSend.setAttribute('onclik', 'sendMessageUser(this)');
-            btSend.setAttribute('class', 'btsend');
-            btSend.innerHTML='>';
-            //insere o textarea e o btSend na divSend
-            divSend.append(inputMsg);
-            divSend.append(btSend);
-            //insere a divText e a divSend na divContent
-            divContent.append(divText);
-            divContent.append(divSend);
-            //insere a divTitle e a divContent na divGeneral
-            divGeneral.append(divTitle);
-            divGeneral.append(divContent);
-            //insere a divGeneral na div conversations
-            document.getElementById('conversations').append(divGeneral);
+    async animateTitle(id, message){
+        let title = document.getElementById('title_'+id);
+        if(title){
+            let count = 0;
+            let change = false;
+            this.playAudio();
+            var originalTitle = document.title;  // Armazena o título original
+            async function animate(){
+                if(count<10){
+                    document.title = (count % 2 === 0) ? message : originalTitle;
+                    count++;
+                    setTimeout(animate, 500);
+                }else{
+                    // title.removeAttribute('style');
+                    document.title = originalTitle;  // Restaura o título original
+                    return;
+                }
+                if(change){
+                    title.setAttribute('style', 'background-color:green;');
+                    change=false;
+                }else{
+                    title.setAttribute('style', 'background-color:red;');
+                    change=true;
+                }
+            }
+            await animate();
         }
+    }
+    playAudio(){
+        var audio = document.getElementById('audio');
+        audio.play();
     }
 }
