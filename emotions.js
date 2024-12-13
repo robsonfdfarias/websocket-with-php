@@ -8,6 +8,7 @@ class Emotions{
             { palavra: "[:-)]", substituto: 'sorrindo.png' },
             { palavra: "[:-(]", substituto: 'triste.png' }
         ];
+        this.imgs = [];
     }
     substituirEmoticons(frase) {
         var substituicoes = this.json;
@@ -19,12 +20,35 @@ class Emotions{
         });
         return frase;
     }
-    printEmotions(){
+    async printEmotions(){
+        if(this.imgs.length<=0){
+            await this.fetchListEmotions();
+        }
         var html = '';
-        this.json.forEach(function(img){
-            let image='<img src="emotions/'+img.substituto+'" class="emotionsIcons" onclick="insertEmotion(this)">';
+        this.imgs.forEach(function(img){
+            // let image='<img src="emotions/'+img.substituto+'" class="emotionsIcons" onclick="insertEmotion(this)">';
+            let image='<img src="emotions/'+img+'" class="emotionsIcons" onclick="insertEmotion(this)">';
             html+=image;
         });
         return html;
+    }
+    async fetchListEmotions(){
+        let url = getURL();
+        url = url.replace("websocket.html", "");
+        url+='endpointListImg.php';
+        await fetch(url, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "Application/json"
+            }
+        })
+        .then(response=>response.json())
+        .then(json=>{
+            console.log(json)
+            this.imgs = json;
+        })
+        .catch(error=>{
+            console.log("Erro encontrado: "+error);
+        })
     }
 }

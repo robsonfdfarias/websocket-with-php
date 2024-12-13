@@ -1,11 +1,13 @@
 class Conn{
-    constructor(sala, nome){
+    constructor(sala, nome, key){
         this.conn = null;
         this.sala = sala;
         this.nome = nome;
         this.status = true;
         this.urlAdmin = new AdminGetUrlRff();
         this.chatWindow = new ChatWindow();
+        this.crypto = new Crypto();
+        this.key = key;
     }
     runSocket(){
         // Definindo as variáveis usuario e token
@@ -18,8 +20,9 @@ class Conn{
             this.onMessage();
         }.bind(this);
 
-        this.conn.onmessage = function(e) {
+        this.conn.onmessage = async function(e) {
             let json = JSON.parse(e.data);
+            // console.log(json)
             if(json.peoplo){
                 people.innerHTML='';
                 let ar = [];
@@ -30,18 +33,37 @@ class Conn{
                 }
                 people.innerHTML+=ar.join('');
             }
+            var message='---';
+            if(json.message!=null && json.message!="saiu" && json.message!='//;;!!@@##' && json.message!=''){
+                // console.log(new Uint8Array(JSON.parse(json.iv)).buffer)
+                // console.log(new Uint8Array(JSON.parse(json.message)).buffer)
+                message = await this.crypto.runDecrypto(new Uint8Array(JSON.parse(json.message)).buffer, this.key, new Uint8Array(JSON.parse(json.iv)).buffer);
+                // console.log(message)
+                message = '<b>'+json.fromName+': </b>'+message;
+                // console.log('******************')
+            }else if(json.message=="saiu"){
+                message = '<b>'+json.fromName+'</b> saiu da sala. ';
+            }else{
+                if(json.fromName!=null){
+                    message = '<b>'+json.fromName+'</b> acabou de entrar. ';
+                }else{
+                    return;
+                }
+            }
             if(json.fromId || json.to){
                 let idDest = json.fromId?json.fromId:json.to;
                 let nameDest = json.fromName?json.fromName:json.toName;
                 // this.newChatUser(idDest, nameDest, json.message);
-                this.chatWindow.newChatUser(idDest, nameDest, json.message);
+                // this.chatWindow.newChatUser(idDest, nameDest, json.message);
+                this.chatWindow.newChatUser(idDest, nameDest, message);
                 if(json.myId===null){
-                    this.animateTitle(idDest, json.message);
+                    // this.animateTitle(idDest, json.message);
+                    this.animateTitle(idDest, message);
                 }
             }else{
                 var messages = document.getElementById("messages");
-                // messages.innerHTML += "<p>" + e.data + "</p>";
-                messages.innerHTML += "<p>" + json.message + "</p>";
+                // messages.innerHTML += "<p>" + json.message + "</p>";
+                messages.innerHTML += "<p>" + message + "</p>";
             }
             
         }.bind(this);
@@ -52,7 +74,9 @@ class Conn{
             roomId: this.sala,
             message: '//;;!!@@##',
             nome: this.nome,
-            to: null
+            to: null,
+            newCon: true,
+            iv:[]
         }
         if(this.status){
             this.conn.send(JSON.stringify(json));
@@ -62,9 +86,11 @@ class Conn{
     sendMessage(roomId, message, to) {
         let json = {
             roomId: roomId,
-            message: message,
+            message: message.message,
+            iv: message.iv,
             nome: this.nome,
-            to: to
+            to: to,
+            newCon: false
         }
 
         if(this.conn!=null && this.conn != undefined){

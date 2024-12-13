@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebSocket PHP - Salas</title>
+    <script src="crypto.js"></script>
 </head>
 <style>
     #conversations{
@@ -32,6 +33,9 @@
         margin: 0 2px;
         overflow: hidden;
         position: relative;
+    }
+    .geral img{
+        cursor: pointer;
     }
     .title{
         padding: 5px 10px;
@@ -86,6 +90,7 @@
         height: calc(100% - 100px);
         background-color: #91ab80;
         display: none;
+        overflow: auto;
     }
     .content{
         padding: 0;
@@ -140,13 +145,17 @@
         var chatWindow = new ChatWindow();
         var adminGetUrl = new AdminGetUrlRff();
         var emotions = new Emotions();
+        //obj de criptografia e descriptografia das mensagens
+        const crypto = new Crypto(); // Instanciando a classe Crypto
+        var key = 'AXFBJpkugrsq13579';
+        crypto.runCrypto("Minha mensagem secreta", key); // Chamando o método
         if(url[1]){
             let variaveis = url[1].split('&');
             var nam = variaveis[0].split("=");
             var sala = variaveis[1].split('=');
             if(nam[0]=='name' && sala[0]=='sala'){
                 nam = decodeURIComponent(nam[1]);
-                socket = new Conn(sala[1], nam.replace("_", " "));
+                socket = new Conn(sala[1], nam.replace("_", " "), key);
                 socket.runSocket();
             }
         }
@@ -154,7 +163,8 @@
         async function sendMessage(){
             if(socket!=undefined && socket!=null){
                 let message = document.getElementById('messageInput').value;
-                socket.sendMessage(sala[1], message, null);
+                let messageCrypto = await crypto.runCrypto(message, key);
+                socket.sendMessage(sala[1], messageCrypto, null);
                 await fetchM(message);
                 document.getElementById('messageInput').value='';
             }else{
@@ -207,10 +217,11 @@
             }
         }
         async function sendMessageTo(obj){
-            let text = obj.parentNode.children[0];
+            let messageCrypto = await crypto.runCrypto(obj.parentNode.children[0].innerHTML, key);
+            // let text = obj.parentNode.children[0];
             let idTo = getIdUserTo(obj.parentNode);
             if(socket!=undefined && socket!=null){
-                socket.sendMessage(sala[1], text.innerHTML, idTo);
+                socket.sendMessage(sala[1], messageCrypto, idTo);
                 // await fetchM(message);
                 obj.parentNode.children[0].innerHTML='';
             }else{
@@ -235,6 +246,7 @@
             let id = getIdUserTo(o);
             let test = verifyIfIsIntoDivRight('fieldText_'+id);
             if(test==false){
+                alert('selecione o campo de texto para inserir o emotion na sua mensagem.');
                 o.style.display='none';
                 return;
             }
@@ -242,9 +254,11 @@
             let selection = window.getSelection();
             let range = selection.getRangeAt(0);
             let texto = selection.toString();
-            //
+            let img = obj.cloneNode(true);
+            img.removeAttribute('onclick');
             // range.deleteContents();
-            range.insertNode(obj.cloneNode(true));
+            // range.insertNode(obj.cloneNode(true));
+            range.insertNode(img);
             selection.removeAllRanges();
             selection.addRange(range);
         }
@@ -264,6 +278,9 @@
                             return false;
                         }
                     }
+                }
+                if(data.parentNode==null){
+                    return false;
                 }
                 val = data.parentNode;
                 return verify(val, char);

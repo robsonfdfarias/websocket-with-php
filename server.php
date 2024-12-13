@@ -53,7 +53,7 @@ class WebSocketServer implements MessageComponentInterface {
         echo "Novo cliente conectado ({$conn->resourceId})\n";
         if(count($this->users)>0){
             $peoplo = $this->getUsersByIdRoom($sala);
-            $conn->send(json_encode(array("message"=>"", "peoplo"=>$peoplo)));
+            $conn->send(json_encode(array("fromName"=>null, "message"=>"", "peoplo"=>$peoplo)));
         }
     }
 
@@ -62,8 +62,15 @@ class WebSocketServer implements MessageComponentInterface {
         $dados = json_decode($msg, true); //true é para o array ser associativo
         $roomId = $dados['roomId'];
         $message = $dados['message'];
+        $iv = $dados['iv'];
         $nome = $dados['nome'];
         $to = $dados['to'];
+        $newCon = $dados['newCon'];
+        // echo '<pre>'.print_r($message, true).'</pre>';
+
+        $conv = json_encode($message);
+        $ivConv = json_encode($iv);
+        // echo '(((('.$newCon.'))))';
         // Verifica se o cliente já está na sala
         if (!isset($this->clientsByRoom[$roomId])) {
             $this->clientsByRoom[$roomId] = [];
@@ -76,13 +83,15 @@ class WebSocketServer implements MessageComponentInterface {
         $this->clientsByRoom[$roomId][$from->resourceId] = $from;
 
         // Envia a mensagem para todos os clientes na mesma sala
-        $this->sendMessageForUsers(array("roomId"=>$roomId, "message"=>$message, "from"=>$from, "nome"=>$nome, "to"=>$to), function($ar){
+        $this->sendMessageForUsers(array("roomId"=>$roomId, "message"=>$conv, "iv"=>$ivConv, "newCon"=>$newCon, "from"=>$from, "nome"=>$nome, "to"=>$to), function($ar){
             if ($ar["from"] !== $ar["client"]) {
                 //checa se a mensagem tem um destionatário específico ou é para todos da sala
                 if($ar['to']!=null){
                     if($ar['to']==$ar['client']->resourceId){
                         $ar["client"]->send(json_encode(array(
-                            "message"=>"<b>{$ar["nome"]}</b>: {$ar['message']}", 
+                            "message"=>$ar['message'], 
+                            "iv"=>$ar['iv'],
+                            "fromName"=>$ar['nome'],
                             "peoplo"=>$this->getUsersByIdRoom($ar["roomId"]), 
                             "fromId"=>$ar['from']->resourceId, 
                             "fromName"=>$ar['nome'],
@@ -92,18 +101,21 @@ class WebSocketServer implements MessageComponentInterface {
                         return;
                     }
                 }else{
-                    if(strpos($ar['message'], '//;;!!@@##') !== false){
-                        $me = "<b style='color:green;'>{$ar["nome"]} entrou na sala.</b>";
+                    if($ar['newCon'] == 1){
+                        $me = null;
                     }else{
-                        $me = "<b>{$ar["nome"]}</b>: {$ar['message']}";
+                        $me = $ar['message'];
                     }
-                    $ar["client"]->send(json_encode(array("message"=>$me, "peoplo"=>$this->getUsersByIdRoom($ar["roomId"]), "fromId"=>null, "roomId"=>$ar["roomId"])));
+                    // echo '===========>>>>>'.$ar['client']->resourceId.'=='.$ar["from"]->resourceId.'<<<<<<<===================';
+                    $ar["client"]->send(json_encode(array("message"=>$me, "fromName"=>$ar['nome'], "iv"=>$ar['iv'], "peoplo"=>$this->getUsersByIdRoom($ar["roomId"]), "fromId"=>null, "roomId"=>$ar["roomId"])));
                 }
             }
             return null;
         }, $this->clientsByRoom);
         $mens = array(
-            "message"=>"<b>{$nome}</b>: {$message}",
+            "message"=>$conv,
+            "iv"=>$ivConv,
+            "fromName"=>$nome,
             "to"=>null,
             "peoplo"=>$this->getUsersByIdRoom($roomId),
             "roomId"=>$roomId,
@@ -112,14 +124,15 @@ class WebSocketServer implements MessageComponentInterface {
         if($to!=null){
             $mens['to'] = $to;
             $nomeDest = $this->getNameTo($to, $roomId);
-            echo $nomeDest;
+            // echo $nomeDest;
             if($nomeDest!=null || $nomeDest!=''){
                 $mens['toName']=$nomeDest;
             }
         }
 
         // Testa se a mensagem é diferente da abertura de conexão ('//;;!!@@##')
-        if(strpos($message, '//;;!!@@##') === false){
+        if($newCon != 1){
+            // echo 'Testando se false: '.$newCon.' **********';
             // Enviar para o próprio cliente também, caso queira
             $from->send(json_encode($mens));
         }
@@ -146,7 +159,8 @@ class WebSocketServer implements MessageComponentInterface {
             }
         }
         $this->sendMessageForUsers(array("roomId"=>$room, "idUser"=>$conn->resourceId), function($ar){
-            $ar["client"]->send(json_encode(array("message"=>"<p style='color:red;'>".$this->users[$ar["roomId"]][$ar["idUser"]]["nome"]." saiu da sala.</p>", "peoplo"=>$this->getUsersByIdRoom($ar["roomId"]))));
+            // $ar["client"]->send(json_encode(array("message"=>"<p style='color:red;'>".$this->users[$ar["roomId"]][$ar["idUser"]]["nome"]." saiu da sala.</p>", "peoplo"=>$this->getUsersByIdRoom($ar["roomId"]))));
+            $ar["client"]->send(json_encode(array("message"=>"saiu", "nome"=>$this->users[$ar["roomId"]][$ar["idUser"]]["nome"], "peoplo"=>$this->getUsersByIdRoom($ar["roomId"]))));
             return null;
         }, $this->clientsByRoom);
         // Remover o usuário de todas as salas

@@ -1,9 +1,9 @@
 class ChatWindow{
     constructor(){
         this.emotions = new Emotions();
-        this.galery = this.emotions.printEmotions();
+        // this.galery = this.emotions.printEmotions();
     }
-    newChatUser(id, nome, message){
+    async newChatUser(id, nome, message){
         if(document.getElementById('geral_'+id)){
             // Já existe, não precisa criar...
         }else{
@@ -14,7 +14,8 @@ class ChatWindow{
             let divEmotions = document.createElement('div');
             divEmotions.setAttribute('id', 'emotions_'+id);
             divEmotions.setAttribute('class', 'divEmotions');
-            divEmotions.innerHTML=this.galery;
+            // divEmotions.innerHTML=this.galery;
+            divEmotions.innerHTML= await this.emotions.printEmotions();
             let divCloseEmotion = document.createElement('div');
             divCloseEmotion.setAttribute('id', 'closeEmotion');
             divCloseEmotion.setAttribute('onclick', 'closeDivEmotions(this)');
